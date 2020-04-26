@@ -11,14 +11,14 @@ export default function HomeScreen() {
     const [ repositorios, setRepositorios ] = React.useState([]);
     const [ username, setUsername ] = React.useState('');
     const [ loading, setLoading ] = React.useState(false);
-    const [ error, setError ] = React.useState(false);
+    const [ error, setError ] = React.useState(200);
     const [ user, setUser ] = React.useState(false);
     const [ api_limite_req, setApiLimiteReq ] = React.useState(false)
 
     /* FUNCTIONS */
     const fetchRepositorios = async () => {
         setLoading(true);
-        setError(false);
+        setError(200);
         setRepositorios([]);
         fetchUser()
 
@@ -29,37 +29,10 @@ export default function HomeScreen() {
             fetchUser()
             setLoading(false);
         } catch (error) {
-            setError(true);
+            setError(error.request.status);
             setLoading(false);
             console.log(error)
 
-        }
-    };
-
-    const fetchUser = async () => {
-        setError(false);
-        setUser(false);
-        
-        try {
-            let result = await axios.get("https://api.github.com/users/" + username);
-
-            setUser(result.data);
-        } catch (error) {
-            setError(true);
-            console.log(error)
-        }
-    };
-
-    const fetchLimite = async () => {
-        setError(false);
-        
-        try {
-            let result = await axios.get("https://api.github.com/rate_limit");
-
-            setApiLimiteReq(result.data);
-        } catch (error) {
-            setError(true);
-            console.log(error)
         }
     };
 
@@ -75,6 +48,34 @@ export default function HomeScreen() {
         return parseInt(remaining_minutes)
     }
 
+
+    const fetchLimite = async () => {
+        
+        try {
+            let result = await axios.get("https://api.github.com/rate_limit");
+
+            setApiLimiteReq(result.data);
+        } catch (error) {
+            setError(error.request.status);
+            console.log(error)
+        }
+    };
+
+    const fetchUser = async () => {
+        setError(200);
+        setUser(false);
+        
+        try {
+            let result = await axios.get("https://api.github.com/users/" + username);
+
+            setUser(result.data);
+        } catch (error) {
+            setError(error.request.status);
+            console.log(error)
+        }
+    };
+
+
     /* USE EFFECT */
 
     React.useEffect(() => {
@@ -85,11 +86,11 @@ export default function HomeScreen() {
 
     return (
         <ScrollView>
-            <Row style={{alignItems: "flex-start"}}>
+            {/* <Row style={{alignItems: "flex-start"}}>
                 <Text>Requests limit: {api_limite_req && api_limite_req['rate'].limit}</Text>
                 <Text>Requests remaining: {api_limite_req && api_limite_req['rate'].remaining}</Text>
                 <Text>Reset limit: {api_limite_req && formatDate(new Date(api_limite_req["rate"].reset * 1000)) + " min"}</Text>
-            </Row>
+            </Row> */}
             <Row> 
                <TextInput
                     style={{width: 200, height: 50}}
@@ -104,22 +105,22 @@ export default function HomeScreen() {
                 />
                 <HelperText
                     type="error"
-                    visible={error}
+                    visible={error != 200}
                 >
-                    Username não encontrado
-                </HelperText>
+                    {(error == 404) ? 'Username not found' : ((error == 403) ? 'You blowed all limits, see "API Requests Limits" tab to more information!' : 'Error failed')}
+                </HelperText> 
 
                 <Button 
                     mode="contained" 
                     color=""
+                    icon="folder-search-outline"
                     onPress={ () => { fetchRepositorios() } }
                     loading={loading}
                     disabled={loading}
-                >{!loading ? "Buscar repositórios" : 'Buscando...'}</Button>
+                >{!loading ? "Search repositories" : 'Searching...'}</Button>
             </Row>
 
             <Divider style={{marginTop: 10, marginBottom: 10}}></Divider>
-
 
                 {
                     user && (
@@ -149,6 +150,3 @@ export default function HomeScreen() {
     );
 }
 
-HomeScreen.navigationOptions = {
-  header: null,
-};
