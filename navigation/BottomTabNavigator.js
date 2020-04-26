@@ -3,7 +3,7 @@ import * as React from 'react';
 
 import TabBarIcon from '../components/TabBarIcon';
 import HomeScreen from '../screens/HomeScreen';
-import LinksScreen from '../screens/LinksScreen';
+import LimitesScreen from '../screens/LimitesScreen';
 import Colors from '../constants/Colors';
 
 const BottomTab = createBottomTabNavigator();
@@ -35,13 +35,13 @@ export default function BottomTabNavigator({ navigation, route }) {
         }}
       />
       <BottomTab.Screen
-        name="Perfil"
-        component={PerfilScreen}
+        name="Limites"
+        component={LimitesScreen}
         options={{
-          title: 'Perfil',
-          tabBarIcon: ({ focused }) => <TabBarIcon focused={focused} name="md-person" />,
+          title: 'API Requests Limits',
+          tabBarIcon: ({ focused, color, size }) => <TabBarIcon focused={focused} name="md-alert" tintColor={color} />,
         }}
-      /> */}
+      />
     </BottomTab.Navigator>
 
   );
@@ -52,10 +52,8 @@ function getHeaderTitle(route) {
 
   switch (routeName) {
     case 'Home':
-      return 'Repositórios';
-    // case 'Links':
-    //   return 'Links to learn more';
-    // case 'Perfil':
-    //   return 'Perfil';
+      return 'Repositories';
+    case 'Limites':
+        return 'API Requests Limits'
   }
 }
