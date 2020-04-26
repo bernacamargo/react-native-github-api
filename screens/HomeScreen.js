@@ -1,179 +1,154 @@
-import * as WebBrowser from 'expo-web-browser';
 import * as React from 'react';
-import { Image, Platform, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { Text } from 'react-native';
 import { ScrollView } from 'react-native-gesture-handler';
+import { Row } from '../styles/styles';
+import axios from "axios";
 
-import { MonoText } from '../components/StyledText';
+import { TextInput, HelperText, Button, List, Avatar, Divider } from 'react-native-paper';
 
 export default function HomeScreen() {
-  return (
-    <View style={styles.container}>
-      <ScrollView style={styles.container} contentContainerStyle={styles.contentContainer}>
-        <View style={styles.welcomeContainer}>
-          <Image
-            source={
-              __DEV__
-                ? require('../assets/images/robot-dev.png')
-                : require('../assets/images/robot-prod.png')
-            }
-            style={styles.welcomeImage}
-          />
-        </View>
 
-        <View style={styles.getStartedContainer}>
-          <DevelopmentModeNotice />
+    const [ repositorios, setRepositorios ] = React.useState([]);
+    const [ username, setUsername ] = React.useState('');
+    const [ loading, setLoading ] = React.useState(false);
+    const [ error, setError ] = React.useState(false);
+    const [ user, setUser ] = React.useState(false);
+    const [ api_limite_req, setApiLimiteReq ] = React.useState(false)
 
-          <Text style={styles.getStartedText}>Open up the code for this screen:</Text>
+    /* FUNCTIONS */
+    const fetchRepositorios = async () => {
+        setLoading(true);
+        setError(false);
+        setRepositorios([]);
+        fetchUser()
 
-          <View style={[styles.codeHighlightContainer, styles.homeScreenFilename]}>
-            <MonoText>screens/HomeScreen.js</MonoText>
-          </View>
+        try {
+            let result = await axios.get("https://api.github.com/users/" + username + "/repos");
+            fetchLimite()
+            setRepositorios(result.data);
+            fetchUser()
+            setLoading(false);
+        } catch (error) {
+            setError(true);
+            setLoading(false);
+            console.log(error)
 
-          <Text style={styles.getStartedText}>
-            Change any of the text, save the file, and your app will automatically reload.
-          </Text>
-        </View>
+        }
+    };
 
-        <View style={styles.helpContainer}>
-          <TouchableOpacity onPress={handleHelpPress} style={styles.helpLink}>
-            <Text style={styles.helpLinkText}>Help, it didn’t automatically reload!</Text>
-          </TouchableOpacity>
-        </View>
-      </ScrollView>
+    const fetchUser = async () => {
+        setError(false);
+        setUser(false);
+        
+        try {
+            let result = await axios.get("https://api.github.com/users/" + username);
 
-      <View style={styles.tabBarInfoContainer}>
-        <Text style={styles.tabBarInfoText}>This is a tab bar. You can edit it in:</Text>
+            setUser(result.data);
+        } catch (error) {
+            setError(true);
+            console.log(error)
+        }
+    };
 
-        <View style={[styles.codeHighlightContainer, styles.navigationFilename]}>
-          <MonoText style={styles.codeHighlightText}>navigation/BottomTabNavigator.js</MonoText>
-        </View>
-      </View>
-    </View>
-  );
+    const fetchLimite = async () => {
+        setError(false);
+        
+        try {
+            let result = await axios.get("https://api.github.com/rate_limit");
+
+            setApiLimiteReq(result.data);
+        } catch (error) {
+            setError(true);
+            console.log(error)
+        }
+    };
+
+    function formatDate(date){
+        let time, remaining_minutes;
+
+        time = date.getTime()
+
+        remaining_minutes = time - (new Date().getTime());
+
+        remaining_minutes /= (1000*60)
+
+        return parseInt(remaining_minutes)
+    }
+
+    /* USE EFFECT */
+
+    React.useEffect(() => {
+
+        fetchLimite()
+
+    }, []);
+
+    return (
+        <ScrollView>
+            <Row style={{alignItems: "flex-start"}}>
+                <Text>Requests limit: {api_limite_req && api_limite_req['rate'].limit}</Text>
+                <Text>Requests remaining: {api_limite_req && api_limite_req['rate'].remaining}</Text>
+                <Text>Reset limit: {api_limite_req && formatDate(new Date(api_limite_req["rate"].reset * 1000)) + " min"}</Text>
+            </Row>
+            <Row> 
+               <TextInput
+                    style={{width: 200, height: 50}}
+                    mode="outlined"
+                    // placeholder='Enter a valid GitHub username'
+                    defaultValue={ username }
+                    label='GitHub Username'
+                    onChangeText={ text => setUsername(text) }
+                    selectionColor='#ff0000'
+                    underlineColor='#ff0000'
+                    clearButtonMode="always"
+                />
+                <HelperText
+                    type="error"
+                    visible={error}
+                >
+                    Username não encontrado
+                </HelperText>
+
+                <Button 
+                    mode="contained" 
+                    color=""
+                    onPress={ () => { fetchRepositorios() } }
+                    loading={loading}
+                    disabled={loading}
+                >{!loading ? "Buscar repositórios" : 'Buscando...'}</Button>
+            </Row>
+
+            <Divider style={{marginTop: 10, marginBottom: 10}}></Divider>
+
+
+                {
+                    user && (
+                            <Row>
+                                <Avatar.Image size={100} source={{uri: user.avatar_url}} />
+                                <Text style={{fontWeight: "bold"}}>{user.name}</Text>
+                                <Text>{user.bio}</Text>
+                            </Row>
+                    )
+                }           
+                {
+                    repositorios.length > 0 && (
+                        repositorios.map((repositorio, key) => {
+                            return (
+                                <List.Item 
+                                        key={key} 
+                                        title={repositorio.name} 
+                                        description={repositorio.description}
+                                        left={props => <List.Icon {...props} icon="folder" />}
+                                    />
+                            )
+                        })
+                    )
+                }
+            
+        </ScrollView>
+    );
 }
 
 HomeScreen.navigationOptions = {
   header: null,
 };
-
-function DevelopmentModeNotice() {
-  if (__DEV__) {
-    const learnMoreButton = (
-      <Text onPress={handleLearnMorePress} style={styles.helpLinkText}>
-        Learn more
-      </Text>
-    );
-
-    return (
-      <Text style={styles.developmentModeText}>
-        Development mode is enabled: your app will be slower but you can use useful development
-        tools. {learnMoreButton}
-      </Text>
-    );
-  } else {
-    return (
-      <Text style={styles.developmentModeText}>
-        You are not in development mode: your app will run at full speed.
-      </Text>
-    );
-  }
-}
-
-function handleLearnMorePress() {
-  WebBrowser.openBrowserAsync('https://docs.expo.io/versions/latest/workflow/development-mode/');
-}
-
-function handleHelpPress() {
-  WebBrowser.openBrowserAsync(
-    'https://docs.expo.io/versions/latest/get-started/create-a-new-app/#making-your-first-change'
-  );
-}
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#fff',
-  },
-  developmentModeText: {
-    marginBottom: 20,
-    color: 'rgba(0,0,0,0.4)',
-    fontSize: 14,
-    lineHeight: 19,
-    textAlign: 'center',
-  },
-  contentContainer: {
-    paddingTop: 30,
-  },
-  welcomeContainer: {
-    alignItems: 'center',
-    marginTop: 10,
-    marginBottom: 20,
-  },
-  welcomeImage: {
-    width: 100,
-    height: 80,
-    resizeMode: 'contain',
-    marginTop: 3,
-    marginLeft: -10,
-  },
-  getStartedContainer: {
-    alignItems: 'center',
-    marginHorizontal: 50,
-  },
-  homeScreenFilename: {
-    marginVertical: 7,
-  },
-  codeHighlightText: {
-    color: 'rgba(96,100,109, 0.8)',
-  },
-  codeHighlightContainer: {
-    backgroundColor: 'rgba(0,0,0,0.05)',
-    borderRadius: 3,
-    paddingHorizontal: 4,
-  },
-  getStartedText: {
-    fontSize: 17,
-    color: 'rgba(96,100,109, 1)',
-    lineHeight: 24,
-    textAlign: 'center',
-  },
-  tabBarInfoContainer: {
-    position: 'absolute',
-    bottom: 0,
-    left: 0,
-    right: 0,
-    ...Platform.select({
-      ios: {
-        shadowColor: 'black',
-        shadowOffset: { width: 0, height: -3 },
-        shadowOpacity: 0.1,
-        shadowRadius: 3,
-      },
-      android: {
-        elevation: 20,
-      },
-    }),
-    alignItems: 'center',
-    backgroundColor: '#fbfbfb',
-    paddingVertical: 20,
-  },
-  tabBarInfoText: {
-    fontSize: 17,
-    color: 'rgba(96,100,109, 1)',
-    textAlign: 'center',
-  },
-  navigationFilename: {
-    marginTop: 5,
-  },
-  helpContainer: {
-    marginTop: 15,
-    alignItems: 'center',
-  },
-  helpLink: {
-    paddingVertical: 15,
-  },
-  helpLinkText: {
-    fontSize: 14,
-    color: '#2e78b7',
-  },
-});

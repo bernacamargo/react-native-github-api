@@ -5,11 +5,23 @@ import * as Font from 'expo-font';
 import { Ionicons } from '@expo/vector-icons';
 import { NavigationContainer } from '@react-navigation/native';
 import { createStackNavigator } from '@react-navigation/stack';
-
+  
 import BottomTabNavigator from './navigation/BottomTabNavigator';
 import useLinking from './navigation/useLinking';
 
 const Stack = createStackNavigator();
+
+import { DefaultTheme, Provider as PaperProvider } from 'react-native-paper';
+
+const theme = {
+    ...DefaultTheme,
+    roundness: 2,
+    colors: {
+      ...DefaultTheme.colors,
+      primary: '#8d00ac',
+      accent: '#f1c40f',
+    },
+  };
 
 export default function App(props) {
   const [isLoadingComplete, setLoadingComplete] = React.useState(false);
@@ -47,14 +59,16 @@ export default function App(props) {
     return null;
   } else {
     return (
-      <View style={styles.container}>
-        {Platform.OS === 'ios' && <StatusBar barStyle="default" />}
-        <NavigationContainer ref={containerRef} initialState={initialNavigationState}>
-          <Stack.Navigator>
-            <Stack.Screen name="Root" component={BottomTabNavigator} />
-          </Stack.Navigator>
-        </NavigationContainer>
-      </View>
+        <PaperProvider theme={ theme }>
+            <View style={styles.container}>
+                {Platform.OS === 'ios' && <StatusBar barStyle="default" />}
+                <NavigationContainer ref={containerRef} initialState={initialNavigationState}>
+                <Stack.Navigator>
+                    <Stack.Screen name="Root" component={BottomTabNavigator} />
+                </Stack.Navigator>
+                </NavigationContainer>
+            </View>
+        </PaperProvider>
     );
   }
 }
