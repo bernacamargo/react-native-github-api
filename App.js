@@ -12,13 +12,14 @@ import useLinking from './navigation/useLinking';
 const Stack = createStackNavigator();
 
 import { DefaultTheme, Provider as PaperProvider } from 'react-native-paper';
+import Colors from './constants/Colors';
 
 const theme = {
     ...DefaultTheme,
     roundness: 2,
     colors: {
       ...DefaultTheme.colors,
-      primary: '#8d00ac',
+      primary: Colors.tintColor,
       accent: '#f1c40f',
     },
   };
